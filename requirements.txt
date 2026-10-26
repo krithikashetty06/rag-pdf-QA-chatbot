@@ -1,0 +1,10 @@
+pymupdf
+sentence-transformers
+chromadb
+anthropic
+streamlit
+rank-bm25
+python-dotenv
+numpy
+# Optional: free local LLM instead of the Claude API
+# ollama

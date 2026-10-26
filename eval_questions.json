@@ -1,0 +1,20 @@
+[
+  {
+    "question": "REPLACE: a factual question whose answer is on one specific page",
+    "answer": "REPLACE: the reference answer",
+    "source": "your-file.pdf",
+    "page": 1,
+    "answerable": true
+  },
+  {
+    "question": "REPLACE: another question from a different document or section",
+    "answer": "REPLACE: the reference answer",
+    "source": "another-file.pdf",
+    "page": 12,
+    "answerable": true
+  },
+  {
+    "question": "REPLACE: a question the documents CANNOT answer",
+    "answerable": false
+  }
+]
