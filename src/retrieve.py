@@ -17,21 +17,33 @@ class Retriever:
                  hybrid=config.USE_HYBRID, rerank=config.USE_RERANKER,
                  db_path=config.DB_PATH):
         self.embedder = SentenceTransformer(embed_model)
-        client = chromadb.PersistentClient(path=db_path)
-        self.col = client.get_collection(collection)  # raises if index not built
+        self.name = collection
+        self.client = chromadb.PersistentClient(path=db_path)
         self.hybrid, self.rerank = hybrid, rerank
         self._reranker = None
+        self._load()
 
+    def _load(self):
+        """(Re)load the collection, its chunks, and the BM25 index."""
+        self.col = self.client.get_collection(self.name)
         data = self.col.get(include=["documents", "metadatas"])
         self.ids = data["ids"]
         self.store = {i: {"id": i, "text": d, "meta": m}
                       for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])}
         self.count = len(self.ids)
-
         self.bm25 = None
-        if hybrid:
+        if self.hybrid and self.ids:
             from rank_bm25 import BM25Okapi
             self.bm25 = BM25Okapi([_tokenize(self.store[i]["text"]) for i in self.ids])
+
+    def _refresh_if_stale(self):
+        """If the index was rebuilt since we loaded it, reload automatically."""
+        try:
+            current = self.client.get_collection(self.name)
+        except Exception:
+            raise RuntimeError("Search index not found. Click Build / rebuild index in the sidebar, or run: python -m src.ingest")
+        if current.id != self.col.id:
+            self._load()
 
     def _get_reranker(self):
         if self._reranker is None:
@@ -41,6 +53,7 @@ class Retriever:
 
     def search(self, question, k=config.TOP_K):
         """Return the top-k chunks as [{id, text, meta}]."""
+        self._refresh_if_stale()
         n = max(k * 5, 20) if (self.hybrid or self.rerank) else k
         n = min(n, self.count)
 

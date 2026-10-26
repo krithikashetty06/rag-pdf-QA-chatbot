@@ -219,7 +219,11 @@ if q := st.chat_input("Ask a question about your documents..."):
         with st.spinner("Searching documents and thinking..."):
             t0 = time.time()
             standalone = rewrite_question(st.session_state.history, q)
-            chunks = retriever.search(standalone, k)
+            try:
+                chunks = retriever.search(standalone, k)
+            except Exception as e:
+                st.error(f'Search failed: {e}. Click Build / rebuild index in the sidebar, or restart the app.')
+                st.stop()
             reply = answer(standalone, chunks)
             elapsed = time.time() - t0
         st.write(reply)
